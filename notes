@@ -1,0 +1,51 @@
+#! /bin/python
+
+import os
+import argparse
+import json
+import base64
+from pathlib import Path
+
+if os.environ.get('XDG_CONFIG_HOME') != None:
+    datafile = Path(os.environ['XDG_CONFIG_HOME']) / Path("rofi-notes.json")
+else:
+    datafile = Path(os.environ['HOME']) / Path("rofi-notes.json")
+
+if os.environ.get('ROFI_RETV') != None:
+    is_rofi = True
+else:
+    is_rofi = False
+
+if datafile.exists():
+    with datafile.open("r") as f:
+        notes = json.load(f)
+else:
+    print("notes datafile not found")
+    json.dump({}, datafile.open("w"))
+    exit()
+
+parser = argparse.ArgumentParser()
+parser.add_argument("input", type=str, nargs="?")
+parser.add_argument("-n", "--new", action="store_true")
+parser.add_argument("-c", "--content", nargs="*")
+# parser.add_argument("-f", "--file")
+args = parser.parse_args()
+
+if args.input == None:
+    for k, v in notes.items():
+        print(f"{k} {v.__repr__()[1:-1]}")
+else:
+    args.input = args.input.split(' ')[0]
+    if args.new:
+        if args.content != None:
+            notes[args.input] = ' '.join(args.content)
+        else:
+            notes[args.input] = args.input
+        json.dump(notes, datafile.open("w"), indent=2)
+    else:
+        b64_encoded = base64.b64encode(notes[args.input].encode())
+        os.system("echo '%s'| base64 -d | xclip -f -r -sel c > /dev/null" %
+                  b64_encoded.decode())
+        if not is_rofi:
+            print(notes[args.input])
+        exit(0)

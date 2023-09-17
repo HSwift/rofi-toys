@@ -1,0 +1,107 @@
+#! /bin/python
+
+import docker
+import os
+import sys
+from docker.models.containers import Container
+
+if os.environ.get('ROFI_RETV') != None:
+    is_rofi = True
+else:
+    is_rofi = False
+
+client = docker.from_env()
+containers: list[Container] = client.containers.list()
+
+
+def getNetworkIpAddress(attrs):
+    networks = attrs['NetworkSettings']['Networks']
+    res = {}
+    for k, v in networks.items():
+        res[k] = v['IPAddress']
+    return res
+
+
+def updateLength(length, line):
+    for i in range(len(line)):
+        if length[i] < len(line[i]):
+            length[i] = len(line[i])
+
+
+def printContainers():
+    output = []
+    lengths = [0, 0, 0, 0]
+    for c in containers:
+        cid = c.short_id
+        name = c.name
+        if len(c.image.tags) != 0:
+            image = c.image.tags[0]
+        else:
+            image = c.image.short_id[7:]
+        ip = getNetworkIpAddress(c.attrs)
+        output.append((cid, name, image, ', '.join(ip.values())))
+        updateLength(lengths, output[-1])
+
+    if is_rofi:
+        print('\x00theme\x1f*{width: 1000;} listview {columns:1;fixed-columns: true;}')
+        print('\x00no-custom\x1ftrue')
+    for l in output:
+        for i in range(len(l)):
+            print(l[i].ljust(lengths[i], ' '), end='  ')
+        if is_rofi:
+            print(f'\x00info\x1f{l[0]}')
+        else:
+            print('')
+
+
+def printOptions(cid):
+    def printWithInfo(*argv):
+        print(*argv, f"\x00info\x1f{cid} {argv[-1].strip('[]')}")
+    if not is_rofi:
+        printWithInfo = print
+    c: Container = client.containers.get(cid)
+    printWithInfo('ID:     ', c.short_id)
+    printWithInfo('name:   ', c.name)
+    printWithInfo('image:  ', c.image.tags[0])
+    for net, address in getNetworkIpAddress(c.attrs).items():
+        printWithInfo('network:', net, address)
+    for port in c.ports.keys():
+        printWithInfo('port:   ', port)
+    printWithInfo('[stop]')
+    printWithInfo('[restart]')
+    printWithInfo('[exec]')
+    printWithInfo('[logs]')
+
+
+def doOption(cid, option):
+    import base64
+    c: Container = client.containers.get(cid)
+    if option == 'stop':
+        c.stop(timeout=0)
+    elif option == 'restart':
+        c.restart(timeout=0)
+    elif option == 'exec':
+        bash_path = os.popen(f'docker exec {cid} which bash').read()
+        if "bash" in bash_path:
+            os.popen(f'/usr/bin/wezterm start docker exec -it {cid} bash')
+        else:
+            os.popen(f'/usr/bin/wezterm start docker exec -it {cid} sh')
+    elif option == 'logs':
+        os.popen(f'/usr/bin/wezterm start docker logs -f {cid}')
+    else:
+        os.system("echo '%s'| base64 -d | xclip -f -r -sel c > /dev/null" % base64.b64encode(option.encode()).decode())
+
+
+if len(sys.argv) == 1:
+    printContainers()
+else:
+    if is_rofi:
+        info = os.environ.get('ROFI_INFO')
+        if ' ' in info:
+            doOption(*info.split(' '))
+        else:
+            printOptions(info)
+    else:
+        if len(sys.argv) == 2:
+            name = sys.argv[1]
+            printOptions(name)
