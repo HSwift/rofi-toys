@@ -217,6 +217,7 @@ fn main() {
 
     rofi.register_entrypoint(entrypoint);
 
+    rofi.register_callback(len);
     rofi.register_callback(base64_encoding);
     rofi.register_callback(base64_decoding);
     rofi.register_callback(base64_url_encoding);
