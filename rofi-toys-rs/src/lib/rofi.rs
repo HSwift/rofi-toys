@@ -125,6 +125,10 @@ impl RofiPlugin {
         // else callback 不存在
     }
 
+    pub fn set_message(&self, msg: &str) {
+        println!("\x00message\x1f{}", msg);
+    }
+
     pub fn add_menu_entry<F: Fn(&RofiPlugin, Vec<String>) + 'static>(
         &self,
         entry: &str,

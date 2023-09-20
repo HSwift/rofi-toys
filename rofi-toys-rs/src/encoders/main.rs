@@ -1,7 +1,18 @@
+use std::ops::ControlFlow;
+
 use base64::engine::general_purpose as base64_engine;
 use base64::Engine;
 use rofi_toys::clipboard;
 use rofi_toys::rofi::RofiPlugin;
+
+fn get_string_length(str: &str) -> usize {
+    str.chars().count()
+}
+
+fn len(_: &RofiPlugin, _: Vec<String>) {
+    let input = clipboard::get_clipboard_text();
+    clipboard::set_clipboard_text(&get_string_length(&input).to_string());
+}
 
 fn base64_encoding(_: &RofiPlugin, _: Vec<String>) {
     let input = clipboard::get_clipboard_text();
@@ -171,6 +182,21 @@ fn unicode_decoding(_: &RofiPlugin, _: Vec<String>) {
 }
 
 fn entrypoint(rofi: &RofiPlugin, _: Vec<String>) {
+    let input = clipboard::get_clipboard_text();
+    let input_length = get_string_length(&input);
+
+    let mut input = input.chars().take(50).collect::<String>();
+    if input_length > 50 {
+        input.push_str("...");
+    }
+    
+    rofi.set_message(&format!(
+        "<b>input: </b>{}",
+        html_escape::encode_safe(&input).replace("\n", " ")
+    ));
+
+    rofi.add_menu_entry(&format!("@len: {}", input_length), len);
+    rofi.add_menu_entry("base64", base64_encoding);
     rofi.add_menu_entry("base64", base64_encoding);
     rofi.add_menu_entry("base64_decode", base64_decoding);
     rofi.add_menu_entry("base64_url", base64_url_encoding);
