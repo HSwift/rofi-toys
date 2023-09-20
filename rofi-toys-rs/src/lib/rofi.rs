@@ -20,6 +20,10 @@ impl RofiPluginState {
         }
     }
 
+    fn empty() -> RofiPluginState {
+        return RofiPluginState::new(String::new(), Vec::new());
+    }
+
     fn parse_from_env(env_name: &str) -> Option<RofiPluginState> {
         if let Ok(raw_state) = std::env::var(env_name) {
             let decode_result: Result<RofiPluginState, serde_json::Error> =
@@ -77,6 +81,11 @@ impl RofiPlugin {
         } else {
             // 都获取不到, 调 entrypoint
             (self.entrypoint)(self, Vec::new());
+            // 给一个空的 state, 这样输错后直接退出
+            println!(
+                "\x00data\x1f{}",
+                serde_json::to_string(&RofiPluginState::empty()).unwrap()
+            );
             return;
         };
 
@@ -101,8 +110,7 @@ impl RofiPlugin {
                 // 清空状态
                 println!(
                     "\x00data\x1f{}",
-                    serde_json::to_string(&RofiPluginState::new(String::new(), Vec::new()))
-                        .unwrap()
+                    serde_json::to_string(&RofiPluginState::empty()).unwrap()
                 );
             } else {
                 let curr_required_param = &params_desc[params_count];
@@ -114,7 +122,7 @@ impl RofiPlugin {
             }
             return;
         }
-        // else callback
+        // else callback 不存在
     }
 
     pub fn add_menu_entry<F: Fn(&RofiPlugin, Vec<String>) + 'static>(
