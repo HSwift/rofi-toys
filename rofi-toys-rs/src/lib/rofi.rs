@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env::VarError};
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
@@ -129,10 +129,19 @@ impl RofiPlugin {
         println!("\x00message\x1f{}", msg);
     }
 
+    pub fn show_error(&self, msg: &str) {
+        let msg = format!("error: {}", msg);
+        let empty_state = serde_json::to_string(&RofiPluginState::empty()).unwrap();
+
+        msg.split("\n").for_each(|line| {
+            println!("{}\x00info\x1f{}", line, &empty_state,);
+        });
+    }
+
     pub fn add_menu_entry<F: Fn(&RofiPlugin, Vec<String>) + 'static>(
         &self,
         entry: &str,
-        callback: F,
+        _callback: F,
     ) {
         println!(
             "{}\x00info\x1f{}",
@@ -148,7 +157,7 @@ impl RofiPlugin {
     pub fn add_menu_entry_with_params<F: Fn(&RofiPlugin, Vec<String>) + 'static>(
         &self,
         entry: &str,
-        callback: F,
+        _callback: F,
         params: Vec<String>,
     ) {
         println!(

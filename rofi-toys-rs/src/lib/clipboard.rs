@@ -10,9 +10,20 @@ static CLIPBOARD: Lazy<Mutex<Clipboard>> =
 
 pub fn get_clipboard_text() -> String {
     let mut clipboard = CLIPBOARD.lock().unwrap();
-    clipboard
-        .get_text()
-        .expect("get text from clipboard failed")
+    let result = clipboard.get_text();
+
+    match result {
+        Ok(text) => {
+            return text;
+        }
+        // 空剪贴板会导致 ContentNotAvailable
+        Err(arboard::Error::ContentNotAvailable) => {
+            return String::new();
+        }
+        Err(err) => {
+            panic!("{:?}", err);
+        }
+    }
 }
 
 pub fn set_clipboard_text(text: &str) {
