@@ -9,6 +9,18 @@ edition = "2021"
 name = "encoders"
 path = "src/encoders/main.rs"
 
+[[bin]]
+name = "clipd"
+path = "src/clipd/main.rs"
+
+[[bin]]
+name = "containers"
+path = "src/containers/main.rs"
+
+[[bin]]
+name = "notes"
+path = "src/notes/main.rs"
+
 [lib]
 name = "rofi_toys"
 path = "src/lib/mod.rs"
