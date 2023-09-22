@@ -211,6 +211,26 @@ fn pyeval(rofi: &RofiPlugin, _: Vec<String>) {
     });
 }
 
+fn pyeval_input(rofi: &RofiPlugin, params: Vec<String>) {
+    let input = clipboard::get_clipboard_text();
+
+    Python::with_gil(|py| {
+        let locals = pyo3::types::PyDict::new(py);
+        locals.set_item("input", &input).unwrap();
+
+        let result = py.eval(&params[0], None, Some(locals));
+
+        match result {
+            Ok(result) => {
+                clipboard::set_clipboard_text(&result.to_string());
+            }
+            Err(err) => {
+                rofi.show_error(&err.to_string());
+            }
+        }
+    });
+}
+
 fn pyexec(rofi: &RofiPlugin, _: Vec<String>) {
     let input = clipboard::get_clipboard_text();
 
@@ -443,6 +463,7 @@ fn entrypoint(rofi: &RofiPlugin, _: Vec<String>) {
     rofi.add_menu_entry("unicode", unicode_encoding);
     rofi.add_menu_entry("unicode_decode", unicode_decoding);
     rofi.add_menu_entry("pyeval", pyeval);
+    rofi.add_menu_entry("pyeval_input", pyeval_input);
     rofi.add_menu_entry("pyexec", pyexec);
     rofi.add_menu_entry("replace", replace);
     rofi.add_menu_entry("regex_replace", regex_replace);
@@ -481,6 +502,7 @@ fn main() {
     rofi.register_callback(unicode_encoding);
     rofi.register_callback(unicode_decoding);
     rofi.register_callback(pyeval);
+    rofi.register_callback_with_params(pyeval_input, vec![String::from("code")]);
     rofi.register_callback(pyexec);
     rofi.register_callback_with_params(replace, vec![String::from("from"), String::from("to")]);
     rofi.register_callback_with_params(
