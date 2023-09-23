@@ -162,7 +162,7 @@ impl RofiPlugin {
     ) {
         println!(
             "{}\x00info\x1f{}",
-            entry,
+            entry.replace("\n", " "),
             serde_json::to_string(&RofiPluginState::new(
                 std::any::type_name::<F>().to_owned(),
                 params

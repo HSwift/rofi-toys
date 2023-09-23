@@ -67,7 +67,7 @@ impl ClipboardServer {
             result: stroage
                 .list()
                 .iter()
-                .map(|e| e.to_string_with_limit(128))
+                .map(|e| e.to_string_with_limit(512))
                 .collect(),
         });
     }

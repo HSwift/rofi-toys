@@ -42,6 +42,8 @@ impl ToString for ClipboardData {
             Self::Text(text) => text.to_owned(),
             Self::Url(html) => html.join("\n"),
             Self::Html(html) => html.to_owned(),
+            // TODO: 更多信息? 例如: 时间, 产生进程等
+            // 通过 md5 去重
             Self::Image(_) => String::from("[image]"),
         }
     }

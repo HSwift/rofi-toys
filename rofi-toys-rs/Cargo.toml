@@ -14,6 +14,10 @@ name = "clipd"
 path = "src/clipd/main.rs"
 
 [[bin]]
+name = "clipc"
+path = "src/clipc/main.rs"
+
+[[bin]]
 name = "containers"
 path = "src/containers/main.rs"
 
