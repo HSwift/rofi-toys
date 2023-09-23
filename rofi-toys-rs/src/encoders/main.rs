@@ -15,60 +15,60 @@ fn get_string_length(str: &str) -> usize {
 }
 
 fn len(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
-    clipboard::set_clipboard_text(&get_string_length(&input).to_string());
+    let input = clipboard::clipboard_get_text();
+    clipboard::clipboard_set_text(&get_string_length(&input).to_string());
 }
 
 fn base64_encoding(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
-    clipboard::set_clipboard_text(&base64_engine::STANDARD.encode(&input));
+    let input = clipboard::clipboard_get_text();
+    clipboard::clipboard_set_text(&base64_engine::STANDARD.encode(&input));
 }
 
 fn base64_decoding(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
     let decode_result: Vec<u8> = base64_engine::STANDARD
         .decode(&input)
         .unwrap_or_else(|_| Vec::new());
-    clipboard::set_clipboard_text(&String::from_utf8_lossy(&decode_result).to_string());
+    clipboard::clipboard_set_text(&String::from_utf8_lossy(&decode_result).to_string());
 }
 
 fn base64_url_encoding(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
-    clipboard::set_clipboard_text(&base64_engine::URL_SAFE.encode(&input));
+    let input = clipboard::clipboard_get_text();
+    clipboard::clipboard_set_text(&base64_engine::URL_SAFE.encode(&input));
 }
 
 fn base64_url_decoding(rofi: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
     let decode_result = base64_engine::URL_SAFE.decode(&input);
     if let Ok(decode_result) = decode_result {
-        clipboard::set_clipboard_text(&String::from_utf8_lossy(&decode_result).to_string());
+        clipboard::clipboard_set_text(&String::from_utf8_lossy(&decode_result).to_string());
     } else {
         rofi.show_error("base64 decoding failed");
     }
 }
 
 fn hex_encoding(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
-    clipboard::set_clipboard_text(&hex::encode(input.as_bytes()));
+    let input = clipboard::clipboard_get_text();
+    clipboard::clipboard_set_text(&hex::encode(input.as_bytes()));
 }
 
 fn hex_decoding(rofi: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
     let decode_result = hex::decode(&input);
     if let Ok(decode_result) = decode_result {
-        clipboard::set_clipboard_text(&String::from_utf8_lossy(&decode_result).to_string());
+        clipboard::clipboard_set_text(&String::from_utf8_lossy(&decode_result).to_string());
     } else {
         rofi.show_error("hex decoding failed");
     }
 }
 
 fn url_encoding(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
-    clipboard::set_clipboard_text(&urlencoding::encode(&input));
+    let input = clipboard::clipboard_get_text();
+    clipboard::clipboard_set_text(&urlencoding::encode(&input));
 }
 
 fn url_all_encoding(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
     let encode_result: String = input
         .as_bytes()
         .iter()
@@ -76,31 +76,31 @@ fn url_all_encoding(_: &RofiPlugin, _: Vec<String>) {
             acc.push_str(percent_encoding::percent_encode_byte(*curr));
             acc
         });
-    clipboard::set_clipboard_text(&encode_result);
+    clipboard::clipboard_set_text(&encode_result);
 }
 
 fn url_decoding(rofi: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
     let decode_result = urlencoding::decode(&input);
     if let Ok(decode_result) = decode_result {
-        clipboard::set_clipboard_text(&decode_result);
+        clipboard::clipboard_set_text(&decode_result);
     } else {
         rofi.show_error("url decoding failed");
     }
 }
 
 fn html_encoding(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
-    clipboard::set_clipboard_text(&html_escape::encode_unquoted_attribute(&input));
+    let input = clipboard::clipboard_get_text();
+    clipboard::clipboard_set_text(&html_escape::encode_unquoted_attribute(&input));
 }
 
 fn html_decoding(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
-    clipboard::set_clipboard_text(&html_escape::decode_html_entities(&input));
+    let input = clipboard::clipboard_get_text();
+    clipboard::clipboard_set_text(&html_escape::decode_html_entities(&input));
 }
 
 fn unicode_encoding(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
     let encode_result = input.chars().fold(String::new(), |mut acc, c| {
         let c32 = c as u32;
         if c32 < 65536 {
@@ -112,7 +112,7 @@ fn unicode_encoding(_: &RofiPlugin, _: Vec<String>) {
         }
         acc
     });
-    clipboard::set_clipboard_text(&encode_result);
+    clipboard::clipboard_set_text(&encode_result);
 }
 
 fn unicode_decodeing_helper(input: String) -> Option<String> {
@@ -186,23 +186,23 @@ fn unicode_decodeing_helper(input: String) -> Option<String> {
 }
 
 fn unicode_decoding(rofi: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
     if let Some(decode_result) = unicode_decodeing_helper(input) {
-        clipboard::set_clipboard_text(&decode_result);
+        clipboard::clipboard_set_text(&decode_result);
     } else {
         rofi.show_error("unicode decoding failed");
     }
 }
 
 fn pyeval(rofi: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
 
     Python::with_gil(|py| {
         let result = py.eval(&input, None, None);
 
         match result {
             Ok(result) => {
-                clipboard::set_clipboard_text(&result.to_string());
+                clipboard::clipboard_set_text(&result.to_string());
             }
             Err(err) => {
                 rofi.show_error(&err.to_string());
@@ -212,7 +212,7 @@ fn pyeval(rofi: &RofiPlugin, _: Vec<String>) {
 }
 
 fn pyeval_input(rofi: &RofiPlugin, params: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
 
     Python::with_gil(|py| {
         let locals = pyo3::types::PyDict::new(py);
@@ -222,7 +222,7 @@ fn pyeval_input(rofi: &RofiPlugin, params: Vec<String>) {
 
         match result {
             Ok(result) => {
-                clipboard::set_clipboard_text(&result.to_string());
+                clipboard::clipboard_set_text(&result.to_string());
             }
             Err(err) => {
                 rofi.show_error(&err.to_string());
@@ -232,7 +232,7 @@ fn pyeval_input(rofi: &RofiPlugin, params: Vec<String>) {
 }
 
 fn pyexec(rofi: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
 
     Python::with_gil(|py| {
         let locals = pyo3::types::PyDict::new(py);
@@ -254,7 +254,7 @@ __output = __stdout.getvalue()
         match result {
             Ok(_) => {
                 if let Some(result) = locals.get_item("__output") {
-                    clipboard::set_clipboard_text(&result.to_string());
+                    clipboard::clipboard_set_text(&result.to_string());
                 }
             }
             Err(err) => {
@@ -265,16 +265,16 @@ __output = __stdout.getvalue()
 }
 
 fn replace(_: &RofiPlugin, params: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
-    clipboard::set_clipboard_text(&input.replace(&params[0], &params[1]));
+    let input = clipboard::clipboard_get_text();
+    clipboard::clipboard_set_text(&input.replace(&params[0], &params[1]));
 }
 
 fn regex_replace(rofi: &RofiPlugin, params: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
 
     match regex::Regex::new(&params[0]) {
         Ok(regex) => {
-            clipboard::set_clipboard_text(&regex.replace_all(&input, &params[1]));
+            clipboard::clipboard_set_text(&regex.replace_all(&input, &params[1]));
         }
         Err(err) => {
             rofi.show_error(&err.to_string());
@@ -283,16 +283,16 @@ fn regex_replace(rofi: &RofiPlugin, params: Vec<String>) {
 }
 
 fn remove(_: &RofiPlugin, params: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
-    clipboard::set_clipboard_text(&input.replace(&params[0], ""));
+    let input = clipboard::clipboard_get_text();
+    clipboard::clipboard_set_text(&input.replace(&params[0], ""));
 }
 
 fn regex_remove(rofi: &RofiPlugin, params: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
 
     match regex::Regex::new(&params[0]) {
         Ok(regex) => {
-            clipboard::set_clipboard_text(&regex.replace_all(&input, ""));
+            clipboard::clipboard_set_text(&regex.replace_all(&input, ""));
         }
         Err(err) => {
             rofi.show_error(&err.to_string());
@@ -301,7 +301,7 @@ fn regex_remove(rofi: &RofiPlugin, params: Vec<String>) {
 }
 
 fn uuid(_: &RofiPlugin, _: Vec<String>) {
-    clipboard::set_clipboard_text(&Uuid::new_v4().to_string());
+    clipboard::clipboard_set_text(&Uuid::new_v4().to_string());
 }
 
 fn random(rofi: &RofiPlugin, params: Vec<String>) {
@@ -313,18 +313,18 @@ fn random(rofi: &RofiPlugin, params: Vec<String>) {
         for _ in 0..length {
             result.push(charset[rng.gen_range(0..charset.len())]);
         }
-        clipboard::set_clipboard_text(&String::from_utf8_lossy(result.as_slice()));
+        clipboard::clipboard_set_text(&String::from_utf8_lossy(result.as_slice()));
     } else {
         rofi.show_error("invalid length");
     }
 }
 
 fn json_format(rofi: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
 
     match serde_json::from_str::<serde_json::Value>(&input) {
         Ok(value) => {
-            clipboard::set_clipboard_text(&serde_json::to_string_pretty(&value).unwrap());
+            clipboard::clipboard_set_text(&serde_json::to_string_pretty(&value).unwrap());
         }
         Err(err) => {
             rofi.show_error(&err.to_string());
@@ -333,45 +333,45 @@ fn json_format(rofi: &RofiPlugin, _: Vec<String>) {
 }
 
 fn md5(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
 
     let mut hasher = Md5::new();
     hasher.update(input.as_bytes());
 
     let hash = hasher.finalize();
-    clipboard::set_clipboard_text(&hex::encode(&hash));
+    clipboard::clipboard_set_text(&hex::encode(&hash));
 }
 
 fn sha256(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
 
     let mut hasher = Sha256::new();
     hasher.update(input.as_bytes());
 
     let hash = hasher.finalize();
-    clipboard::set_clipboard_text(&hex::encode(&hash));
+    clipboard::clipboard_set_text(&hex::encode(&hash));
 }
 
 fn upper(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
-    clipboard::set_clipboard_text(&input.to_uppercase());
+    let input = clipboard::clipboard_get_text();
+    clipboard::clipboard_set_text(&input.to_uppercase());
 }
 
 fn lower(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
-    clipboard::set_clipboard_text(&input.to_lowercase());
+    let input = clipboard::clipboard_get_text();
+    clipboard::clipboard_set_text(&input.to_lowercase());
 }
 
 fn substring(rofi: &RofiPlugin, params: Vec<String>) {
     if let (Ok(start), Ok(mut end)) = (params[0].parse::<usize>(), params[1].parse::<usize>()) {
-        let input = clipboard::get_clipboard_text();
+        let input = clipboard::clipboard_get_text();
         let input_length = input.len();
         if start < input_length && start < end {
             if end > input_length {
                 end = input_length;
             }
 
-            clipboard::set_clipboard_text(&input[start..end]);
+            clipboard::clipboard_set_text(&input[start..end]);
             return;
         }
     }
@@ -398,7 +398,7 @@ impl serde::Serialize for DuplicateQSValue {
 }
 
 fn qs_to_json(_: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
     let mut qs_value: HashMap<String, DuplicateQSValue> = HashMap::new();
 
     for kv in form_urlencoded::parse(input.as_bytes()) {
@@ -408,26 +408,26 @@ fn qs_to_json(_: &RofiPlugin, _: Vec<String>) {
             .push(kv.1.to_string());
     }
 
-    clipboard::set_clipboard_text(&serde_json::to_string(&qs_value).unwrap());
+    clipboard::clipboard_set_text(&serde_json::to_string(&qs_value).unwrap());
 }
 
 fn ord(rofi: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
     if let Some(c) = input.chars().next() {
-        clipboard::set_clipboard_text(&(c as u32).to_string());
+        clipboard::clipboard_set_text(&(c as u32).to_string());
     } else {
         rofi.show_error("invalid input for ord");
     }
 }
 
 fn chr(rofi: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
 
     if let Ok(start) = input.parse::<usize>() {
         if let Some(c) = char::from_u32(start as u32) {
             let mut s = String::new();
             s.push(c);
-            clipboard::set_clipboard_text(&s);
+            clipboard::clipboard_set_text(&s);
             return;
         }
     }
@@ -435,7 +435,7 @@ fn chr(rofi: &RofiPlugin, _: Vec<String>) {
 }
 
 fn entrypoint(rofi: &RofiPlugin, _: Vec<String>) {
-    let input = clipboard::get_clipboard_text();
+    let input = clipboard::clipboard_get_text();
     let input_length = get_string_length(&input);
 
     let mut input = input.chars().take(50).collect::<String>();
