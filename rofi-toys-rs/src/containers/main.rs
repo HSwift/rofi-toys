@@ -259,6 +259,8 @@ pub fn container_menu(rofi: &RofiPlugin, params: Vec<String>) -> anyhow::Result<
         vec![format!("sudo docker logs -it {} bash", &sid)],
     );
 
+    rofi.add_menu_entry("[back]", list_containers);
+
     Ok(())
 }
 
