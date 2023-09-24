@@ -2,7 +2,28 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-type RofiPluginCallback = Box<dyn Fn(&RofiPlugin, Vec<String>) + 'static>;
+type RofiPluginCallback = Box<dyn Fn(&RofiPlugin, Vec<String>) -> anyhow::Result<()> + 'static>;
+
+#[derive(Debug)]
+pub struct RofiPluginError {
+    msg: String,
+}
+
+impl std::fmt::Display for RofiPluginError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", &self.msg)
+    }
+}
+
+impl std::error::Error for RofiPluginError {}
+
+impl RofiPluginError {
+    pub fn new(msg: &str) -> RofiPluginError {
+        return RofiPluginError {
+            msg: msg.to_owned(),
+        };
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RofiPluginState {
@@ -45,13 +66,15 @@ pub struct RofiPlugin {
 impl RofiPlugin {
     pub fn new() -> RofiPlugin {
         return RofiPlugin {
-            entrypoint: Box::new(|_, _| {}),
+            entrypoint: Box::new(|_, _| -> anyhow::Result<()> { Ok(()) }),
             callbacks: HashMap::new(),
             callbacks_params_desc: HashMap::new(),
         };
     }
 
-    pub fn register_callback_with_params<F: Fn(&RofiPlugin, Vec<String>) + 'static>(
+    pub fn register_callback_with_params<
+        F: Fn(&RofiPlugin, Vec<String>) -> anyhow::Result<()> + 'static,
+    >(
         &mut self,
         callback: F,
         params_desc: Vec<String>,
@@ -63,11 +86,17 @@ impl RofiPlugin {
             .insert(callback_name, params_desc);
     }
 
-    pub fn register_callback<F: Fn(&RofiPlugin, Vec<String>) + 'static>(&mut self, callback: F) {
+    pub fn register_callback<F: Fn(&RofiPlugin, Vec<String>) -> anyhow::Result<()> + 'static>(
+        &mut self,
+        callback: F,
+    ) {
         self.register_callback_with_params(callback, Vec::new());
     }
 
-    pub fn register_entrypoint<F: Fn(&RofiPlugin, Vec<String>) + 'static>(&mut self, callback: F) {
+    pub fn register_entrypoint<F: Fn(&RofiPlugin, Vec<String>) -> anyhow::Result<()> + 'static>(
+        &mut self,
+        callback: F,
+    ) {
         self.entrypoint = Box::new(callback);
     }
 
@@ -80,12 +109,19 @@ impl RofiPlugin {
             state
         } else {
             // 都获取不到, 调 entrypoint
-            (self.entrypoint)(self, Vec::new());
-            // 给一个空的 state, 这样输错后直接退出
-            println!(
-                "\x00data\x1f{}",
-                serde_json::to_string(&RofiPluginState::empty()).unwrap()
-            );
+            let result = (self.entrypoint)(self, Vec::new());
+            match result {
+                Ok(_) => {
+                    // 给一个空的 state, 这样输错后直接退出
+                    println!(
+                        "\x00data\x1f{}",
+                        serde_json::to_string(&RofiPluginState::empty()).unwrap()
+                    );
+                }
+                Err(err) => {
+                    self.show_error(&err.to_string());
+                }
+            }
             return;
         };
 
@@ -106,12 +142,19 @@ impl RofiPlugin {
             // 数量足够, 调 callback, 否则继续要求用户输入更多参数
             let params_count = state.params.len();
             if params_count >= params_desc.len() {
-                callback(self, state.params);
-                // 清空状态
-                println!(
-                    "\x00data\x1f{}",
-                    serde_json::to_string(&RofiPluginState::empty()).unwrap()
-                );
+                let result = callback(self, state.params);
+                match result {
+                    Ok(_) => {
+                        // 清空状态, 跟 entrypoint 相同
+                        println!(
+                            "\x00data\x1f{}",
+                            serde_json::to_string(&RofiPluginState::empty()).unwrap()
+                        );
+                    }
+                    Err(err) => {
+                        self.show_error(&err.to_string());
+                    }
+                }
             } else {
                 let curr_required_param = &params_desc[params_count];
                 state.inputting_parmas = true;
@@ -134,18 +177,18 @@ impl RofiPlugin {
         let empty_state = serde_json::to_string(&RofiPluginState::empty()).unwrap();
 
         msg.split("\n").for_each(|line| {
-            println!("{}\x00info\x1f{}", line, &empty_state,);
+            println!("{}\x00info\x1f{}", line, &empty_state);
         });
     }
 
-    pub fn add_menu_entry<F: Fn(&RofiPlugin, Vec<String>) + 'static>(
+    pub fn add_menu_entry<F: Fn(&RofiPlugin, Vec<String>) -> anyhow::Result<()> + 'static>(
         &self,
         entry: &str,
         _callback: F,
     ) {
         println!(
             "{}\x00info\x1f{}",
-            entry,
+            entry.replace("\n", " "),
             serde_json::to_string(&RofiPluginState::new(
                 std::any::type_name::<F>().to_owned(),
                 Vec::new()
@@ -154,7 +197,9 @@ impl RofiPlugin {
         );
     }
 
-    pub fn add_menu_entry_with_params<F: Fn(&RofiPlugin, Vec<String>) + 'static>(
+    pub fn add_menu_entry_with_params<
+        F: Fn(&RofiPlugin, Vec<String>) -> anyhow::Result<()> + 'static,
+    >(
         &self,
         entry: &str,
         _callback: F,
@@ -168,6 +213,14 @@ impl RofiPlugin {
                 params
             ))
             .unwrap()
+        );
+    }
+
+    pub fn add_menu_line(&self, line: &str) {
+        println!(
+            "{}\x00info\x1f{}\x1fnonselectable\x1ftrue",
+            line.replace("\n", " "),
+            serde_json::to_string(&RofiPluginState::empty()).unwrap()
         );
     }
 }

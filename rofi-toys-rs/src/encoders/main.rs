@@ -6,7 +6,7 @@ use md5::{Digest, Md5};
 use pyo3::Python;
 use rand::Rng;
 use rofi_toys::clipboard;
-use rofi_toys::rofi::RofiPlugin;
+use rofi_toys::rofi::{RofiPlugin, RofiPluginError};
 use sha2::Sha256;
 use uuid::Uuid;
 
@@ -14,60 +14,66 @@ fn get_string_length(str: &str) -> usize {
     str.chars().count()
 }
 
-fn len(_: &RofiPlugin, _: Vec<String>) {
+fn len(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     clipboard::clipboard_set_text(&get_string_length(&input).to_string());
+
+    Ok(())
 }
 
-fn base64_encoding(_: &RofiPlugin, _: Vec<String>) {
+fn base64_encoding(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     clipboard::clipboard_set_text(&base64_engine::STANDARD.encode(&input));
+
+    Ok(())
 }
 
-fn base64_decoding(_: &RofiPlugin, _: Vec<String>) {
+fn base64_decoding(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
-    let decode_result: Vec<u8> = base64_engine::STANDARD
-        .decode(&input)
-        .unwrap_or_else(|_| Vec::new());
+    let decode_result: Vec<u8> = base64_engine::STANDARD.decode(&input)?;
     clipboard::clipboard_set_text(&String::from_utf8_lossy(&decode_result).to_string());
+
+    Ok(())
 }
 
-fn base64_url_encoding(_: &RofiPlugin, _: Vec<String>) {
+fn base64_url_encoding(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     clipboard::clipboard_set_text(&base64_engine::URL_SAFE.encode(&input));
+
+    Ok(())
 }
 
-fn base64_url_decoding(rofi: &RofiPlugin, _: Vec<String>) {
+fn base64_url_decoding(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
-    let decode_result = base64_engine::URL_SAFE.decode(&input);
-    if let Ok(decode_result) = decode_result {
-        clipboard::clipboard_set_text(&String::from_utf8_lossy(&decode_result).to_string());
-    } else {
-        rofi.show_error("base64 decoding failed");
-    }
+    let decode_result = base64_engine::URL_SAFE.decode(&input)?;
+    clipboard::clipboard_set_text(&String::from_utf8_lossy(&decode_result).to_string());
+
+    Ok(())
 }
 
-fn hex_encoding(_: &RofiPlugin, _: Vec<String>) {
+fn hex_encoding(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     clipboard::clipboard_set_text(&hex::encode(input.as_bytes()));
+
+    Ok(())
 }
 
-fn hex_decoding(rofi: &RofiPlugin, _: Vec<String>) {
+fn hex_decoding(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
-    let decode_result = hex::decode(&input);
-    if let Ok(decode_result) = decode_result {
-        clipboard::clipboard_set_text(&String::from_utf8_lossy(&decode_result).to_string());
-    } else {
-        rofi.show_error("hex decoding failed");
-    }
+    let decode_result = hex::decode(&input)?;
+    clipboard::clipboard_set_text(&String::from_utf8_lossy(&decode_result).to_string());
+
+    Ok(())
 }
 
-fn url_encoding(_: &RofiPlugin, _: Vec<String>) {
+fn url_encoding(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     clipboard::clipboard_set_text(&urlencoding::encode(&input));
+
+    Ok(())
 }
 
-fn url_all_encoding(_: &RofiPlugin, _: Vec<String>) {
+fn url_all_encoding(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     let encode_result: String = input
         .as_bytes()
@@ -77,29 +83,33 @@ fn url_all_encoding(_: &RofiPlugin, _: Vec<String>) {
             acc
         });
     clipboard::clipboard_set_text(&encode_result);
+
+    Ok(())
 }
 
-fn url_decoding(rofi: &RofiPlugin, _: Vec<String>) {
+fn url_decoding(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
-    let decode_result = urlencoding::decode(&input);
-    if let Ok(decode_result) = decode_result {
-        clipboard::clipboard_set_text(&decode_result);
-    } else {
-        rofi.show_error("url decoding failed");
-    }
+    let decode_result = urlencoding::decode(&input)?;
+    clipboard::clipboard_set_text(&decode_result);
+
+    Ok(())
 }
 
-fn html_encoding(_: &RofiPlugin, _: Vec<String>) {
+fn html_encoding(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     clipboard::clipboard_set_text(&html_escape::encode_unquoted_attribute(&input));
+
+    Ok(())
 }
 
-fn html_decoding(_: &RofiPlugin, _: Vec<String>) {
+fn html_decoding(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     clipboard::clipboard_set_text(&html_escape::decode_html_entities(&input));
+
+    Ok(())
 }
 
-fn unicode_encoding(_: &RofiPlugin, _: Vec<String>) {
+fn unicode_encoding(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     let encode_result = input.chars().fold(String::new(), |mut acc, c| {
         let c32 = c as u32;
@@ -113,6 +123,8 @@ fn unicode_encoding(_: &RofiPlugin, _: Vec<String>) {
         acc
     });
     clipboard::clipboard_set_text(&encode_result);
+
+    Ok(())
 }
 
 fn unicode_decodeing_helper(input: String) -> Option<String> {
@@ -185,56 +197,44 @@ fn unicode_decodeing_helper(input: String) -> Option<String> {
     return Some(String::from_utf8_lossy(&result).to_string());
 }
 
-fn unicode_decoding(rofi: &RofiPlugin, _: Vec<String>) {
+fn unicode_decoding(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     if let Some(decode_result) = unicode_decodeing_helper(input) {
         clipboard::clipboard_set_text(&decode_result);
+        Ok(())
     } else {
-        rofi.show_error("unicode decoding failed");
+        Err(RofiPluginError::new("unicode decoding failed").into())
     }
 }
 
-fn pyeval(rofi: &RofiPlugin, _: Vec<String>) {
+fn pyeval(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
 
-    Python::with_gil(|py| {
-        let result = py.eval(&input, None, None);
+    let result = Python::with_gil(|py| py.eval(&input, None, None).map(|v| v.to_string()));
+    clipboard::clipboard_set_text(&result?);
 
-        match result {
-            Ok(result) => {
-                clipboard::clipboard_set_text(&result.to_string());
-            }
-            Err(err) => {
-                rofi.show_error(&err.to_string());
-            }
-        }
-    });
+    Ok(())
 }
 
-fn pyeval_input(rofi: &RofiPlugin, params: Vec<String>) {
+fn pyeval_input(_: &RofiPlugin, params: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
 
-    Python::with_gil(|py| {
+    let result = Python::with_gil(|py| {
         let locals = pyo3::types::PyDict::new(py);
         locals.set_item("input", &input).unwrap();
 
-        let result = py.eval(&params[0], None, Some(locals));
-
-        match result {
-            Ok(result) => {
-                clipboard::clipboard_set_text(&result.to_string());
-            }
-            Err(err) => {
-                rofi.show_error(&err.to_string());
-            }
-        }
+        py.eval(&params[0], None, Some(locals))
+            .map(|v| v.to_string())
     });
+    clipboard::clipboard_set_text(&result?);
+
+    Ok(())
 }
 
-fn pyexec(rofi: &RofiPlugin, _: Vec<String>) {
+fn pyexec(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
 
-    Python::with_gil(|py| {
+    let result = Python::with_gil(|py| {
         let locals = pyo3::types::PyDict::new(py);
         locals.set_item("__code", &input).unwrap();
 
@@ -251,88 +251,80 @@ __output = __stdout.getvalue()
             None,
             Some(locals),
         );
-        match result {
-            Ok(_) => {
-                if let Some(result) = locals.get_item("__output") {
-                    clipboard::clipboard_set_text(&result.to_string());
-                }
-            }
-            Err(err) => {
-                rofi.show_error(&err.to_string());
-            }
-        }
+
+        (result, locals.get_item("__output").map(|v| v.to_string()))
     });
+
+    result.0?;
+
+    if let Some(result) = result.1 {
+        clipboard::clipboard_set_text(&result);
+
+        Ok(())
+    } else {
+        Err(RofiPluginError::new("can't get output var in locals").into())
+    }
 }
 
-fn replace(_: &RofiPlugin, params: Vec<String>) {
+fn replace(_: &RofiPlugin, params: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     clipboard::clipboard_set_text(&input.replace(&params[0], &params[1]));
+
+    Ok(())
 }
 
-fn regex_replace(rofi: &RofiPlugin, params: Vec<String>) {
+fn regex_replace(_: &RofiPlugin, params: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
+    let regex = regex::Regex::new(&params[0])?;
+    clipboard::clipboard_set_text(&regex.replace_all(&input, &params[1]));
 
-    match regex::Regex::new(&params[0]) {
-        Ok(regex) => {
-            clipboard::clipboard_set_text(&regex.replace_all(&input, &params[1]));
-        }
-        Err(err) => {
-            rofi.show_error(&err.to_string());
-        }
-    };
+    Ok(())
 }
 
-fn remove(_: &RofiPlugin, params: Vec<String>) {
+fn remove(_: &RofiPlugin, params: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     clipboard::clipboard_set_text(&input.replace(&params[0], ""));
+
+    Ok(())
 }
 
-fn regex_remove(rofi: &RofiPlugin, params: Vec<String>) {
+fn regex_remove(_: &RofiPlugin, params: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
+    let regex = regex::Regex::new(&params[0])?;
+    clipboard::clipboard_set_text(&regex.replace_all(&input, ""));
 
-    match regex::Regex::new(&params[0]) {
-        Ok(regex) => {
-            clipboard::clipboard_set_text(&regex.replace_all(&input, ""));
-        }
-        Err(err) => {
-            rofi.show_error(&err.to_string());
-        }
-    };
+    Ok(())
 }
 
-fn uuid(_: &RofiPlugin, _: Vec<String>) {
+fn uuid(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     clipboard::clipboard_set_text(&Uuid::new_v4().to_string());
+
+    Ok(())
 }
 
-fn random(rofi: &RofiPlugin, params: Vec<String>) {
-    if let Ok(length) = params[0].parse::<usize>() {
-        let charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".as_bytes();
-        let mut rng = rand::thread_rng();
-        let mut result: Vec<u8> = Vec::new();
+fn random(_: &RofiPlugin, params: Vec<String>) -> anyhow::Result<()> {
+    let length = params[0].parse::<usize>()?;
+    let charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".as_bytes();
+    let mut rng = rand::thread_rng();
+    let mut result: Vec<u8> = Vec::new();
 
-        for _ in 0..length {
-            result.push(charset[rng.gen_range(0..charset.len())]);
-        }
-        clipboard::clipboard_set_text(&String::from_utf8_lossy(result.as_slice()));
-    } else {
-        rofi.show_error("invalid length");
+    for _ in 0..length {
+        result.push(charset[rng.gen_range(0..charset.len())]);
     }
+    clipboard::clipboard_set_text(&String::from_utf8_lossy(result.as_slice()));
+
+    Ok(())
 }
 
-fn json_format(rofi: &RofiPlugin, _: Vec<String>) {
+fn json_format(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
+    let value = serde_json::from_str::<serde_json::Value>(&input)?;
+    clipboard::clipboard_set_text(&serde_json::to_string_pretty(&value).unwrap());
 
-    match serde_json::from_str::<serde_json::Value>(&input) {
-        Ok(value) => {
-            clipboard::clipboard_set_text(&serde_json::to_string_pretty(&value).unwrap());
-        }
-        Err(err) => {
-            rofi.show_error(&err.to_string());
-        }
-    }
+    Ok(())
 }
 
-fn md5(_: &RofiPlugin, _: Vec<String>) {
+fn md5(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
 
     let mut hasher = Md5::new();
@@ -340,9 +332,11 @@ fn md5(_: &RofiPlugin, _: Vec<String>) {
 
     let hash = hasher.finalize();
     clipboard::clipboard_set_text(&hex::encode(&hash));
+
+    Ok(())
 }
 
-fn sha256(_: &RofiPlugin, _: Vec<String>) {
+fn sha256(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
 
     let mut hasher = Sha256::new();
@@ -350,32 +344,38 @@ fn sha256(_: &RofiPlugin, _: Vec<String>) {
 
     let hash = hasher.finalize();
     clipboard::clipboard_set_text(&hex::encode(&hash));
+
+    Ok(())
 }
 
-fn upper(_: &RofiPlugin, _: Vec<String>) {
+fn upper(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     clipboard::clipboard_set_text(&input.to_uppercase());
+
+    Ok(())
 }
 
-fn lower(_: &RofiPlugin, _: Vec<String>) {
+fn lower(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     clipboard::clipboard_set_text(&input.to_lowercase());
+
+    Ok(())
 }
 
-fn substring(rofi: &RofiPlugin, params: Vec<String>) {
-    if let (Ok(start), Ok(mut end)) = (params[0].parse::<usize>(), params[1].parse::<usize>()) {
-        let input = clipboard::clipboard_get_text();
-        let input_length = input.len();
-        if start < input_length && start < end {
-            if end > input_length {
-                end = input_length;
-            }
-
-            clipboard::clipboard_set_text(&input[start..end]);
-            return;
+fn substring(_: &RofiPlugin, params: Vec<String>) -> anyhow::Result<()> {
+    let (start, mut end) = (params[0].parse::<usize>()?, params[1].parse::<usize>()?);
+    let input = clipboard::clipboard_get_text();
+    let input_length = input.len();
+    if start < input_length && start < end {
+        if end > input_length {
+            end = input_length;
         }
+
+        clipboard::clipboard_set_text(&input[start..end]);
+        Ok(())
+    } else {
+        Err(RofiPluginError::new("invalid start/end").into())
     }
-    rofi.show_error("invalid start/end");
 }
 
 #[derive(Default)]
@@ -397,7 +397,7 @@ impl serde::Serialize for DuplicateQSValue {
     }
 }
 
-fn qs_to_json(_: &RofiPlugin, _: Vec<String>) {
+fn qs_to_json(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     let mut qs_value: HashMap<String, DuplicateQSValue> = HashMap::new();
 
@@ -409,32 +409,35 @@ fn qs_to_json(_: &RofiPlugin, _: Vec<String>) {
     }
 
     clipboard::clipboard_set_text(&serde_json::to_string(&qs_value).unwrap());
+
+    Ok(())
 }
 
-fn ord(rofi: &RofiPlugin, _: Vec<String>) {
+fn ord(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     if let Some(c) = input.chars().next() {
         clipboard::clipboard_set_text(&(c as u32).to_string());
+        Ok(())
     } else {
-        rofi.show_error("invalid input for ord");
+        Err(RofiPluginError::new("invalid input for ord").into())
     }
 }
 
-fn chr(rofi: &RofiPlugin, _: Vec<String>) {
+fn chr(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
+    let codepoint = input.parse::<usize>()?;
+    if let Some(c) = char::from_u32(codepoint as u32) {
+        let mut s = String::new();
+        s.push(c);
+        clipboard::clipboard_set_text(&s);
 
-    if let Ok(start) = input.parse::<usize>() {
-        if let Some(c) = char::from_u32(start as u32) {
-            let mut s = String::new();
-            s.push(c);
-            clipboard::clipboard_set_text(&s);
-            return;
-        }
+        Ok(())
+    } else {
+        Err(RofiPluginError::new("invalid codepoint").into())
     }
-    rofi.show_error("invalid codepoint");
 }
 
-fn entrypoint(rofi: &RofiPlugin, _: Vec<String>) {
+fn entrypoint(rofi: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     let input_length = get_string_length(&input);
 
@@ -480,6 +483,8 @@ fn entrypoint(rofi: &RofiPlugin, _: Vec<String>) {
     rofi.add_menu_entry("qs_to_json", qs_to_json);
     rofi.add_menu_entry("chr", chr);
     rofi.add_menu_entry("ord", ord);
+
+    Ok(())
 }
 
 fn main() {

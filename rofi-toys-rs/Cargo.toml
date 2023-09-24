@@ -5,6 +5,12 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[profile.release]
+opt-level = 'z'
+lto = true
+codegen-units = 1
+strip = true
+
 [[bin]]
 name = "encoders"
 path = "src/encoders/main.rs"
@@ -41,6 +47,9 @@ actix-web = "4"
 isahc = "1.7.2"
 http = "0.2.9"
 chrono = "0.4.31"
+docker-api = "0.14"
+tokio = { version = "1.32.0", features = ["full"] }
+anyhow = "1.0.75"
 
 # encodings
 base64 = "0.21.4"

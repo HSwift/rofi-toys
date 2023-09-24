@@ -20,7 +20,7 @@ impl ClipboardStorage {
     }
 
     pub fn insert_data(&mut self, data: manager::ClipboardData) {
-        if self.datas.len() == 0 {
+        if self.datas.is_empty() {
             self.datas.push_front(data);
         } else if *self.datas.front().unwrap() != data {
             // 只有不相同的时候 push
@@ -42,7 +42,7 @@ impl ClipboardStorage {
     pub fn list(&self) -> Vec<&manager::ClipboardData> {
         self.datas.iter().collect::<Vec<_>>()
     }
-    
+
     pub fn move_to_front(&mut self, idx: usize) -> Option<&manager::ClipboardData> {
         if let Some(data) = self.datas.remove(idx) {
             self.datas.push_front(data);
