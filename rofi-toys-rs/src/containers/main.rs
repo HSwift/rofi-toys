@@ -244,19 +244,25 @@ pub fn container_menu(rofi: &RofiPlugin, params: Vec<String>) -> anyhow::Result<
     rofi.add_menu_entry_with_params(
         "[restart]",
         copy_to_clipboard,
-        vec![format!("sudo docker restart -it {} bash", &sid)],
+        vec![format!("sudo docker restart -t0 {}", &sid)],
     );
 
     rofi.add_menu_entry_with_params(
         "[stop]",
         copy_to_clipboard,
-        vec![format!("sudo docker stop -it {} bash", &sid)],
+        vec![format!("sudo docker stop -t0 {}", &sid)],
     );
 
     rofi.add_menu_entry_with_params(
         "[logs]",
         copy_to_clipboard,
-        vec![format!("sudo docker logs -it {} bash", &sid)],
+        vec![format!("sudo docker logs {}", &sid)],
+    );
+
+    rofi.add_menu_entry_with_params(
+        "[inspect]",
+        copy_to_clipboard,
+        vec![format!("sudo docker inspect {}", &sid)],
     );
 
     rofi.add_menu_entry("[back]", list_containers);

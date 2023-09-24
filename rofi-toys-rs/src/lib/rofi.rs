@@ -57,7 +57,7 @@ impl RofiPluginState {
 }
 
 pub struct RofiPlugin {
-    entrypoint: RofiPluginCallback,
+    entrypoint: String,
 
     callbacks: HashMap<String, RofiPluginCallback>,
     callbacks_params_desc: HashMap<String, Vec<String>>,
@@ -66,7 +66,7 @@ pub struct RofiPlugin {
 impl RofiPlugin {
     pub fn new() -> RofiPlugin {
         return RofiPlugin {
-            entrypoint: Box::new(|_, _| -> anyhow::Result<()> { Ok(()) }),
+            entrypoint: String::new(),
             callbacks: HashMap::new(),
             callbacks_params_desc: HashMap::new(),
         };
@@ -97,7 +97,8 @@ impl RofiPlugin {
         &mut self,
         callback: F,
     ) {
-        self.entrypoint = Box::new(callback);
+        self.entrypoint = std::any::type_name::<F>().to_owned();
+        self.register_callback(callback);
     }
 
     pub fn run(&self) {
@@ -109,20 +110,7 @@ impl RofiPlugin {
             state
         } else {
             // 都获取不到, 调 entrypoint
-            let result = (self.entrypoint)(self, Vec::new());
-            match result {
-                Ok(_) => {
-                    // 给一个空的 state, 这样输错后直接退出
-                    println!(
-                        "\x00data\x1f{}",
-                        serde_json::to_string(&RofiPluginState::empty()).unwrap()
-                    );
-                }
-                Err(err) => {
-                    self.show_error(&err.to_string());
-                }
-            }
-            return;
+            RofiPluginState::new(self.entrypoint.clone(), Vec::new())
         };
 
         let callback_name = &state.callback;
