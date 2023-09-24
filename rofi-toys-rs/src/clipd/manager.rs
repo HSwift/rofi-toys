@@ -1,3 +1,4 @@
+use md5::{Digest, Md5};
 use std::sync::{Arc, Mutex};
 
 use crate::{http_rpc, stroage};
@@ -28,12 +29,16 @@ impl ClipboardDataType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, Eq, Clone)]
 pub enum ClipboardData {
     Text(String),
     Url(Vec<String>),
     Html(String),
-    Image(gtk::gdk_pixbuf::Pixbuf),
+    Image(
+        gtk::gdk_pixbuf::Pixbuf,
+        String,
+        chrono::DateTime<chrono::Local>,
+    ),
 }
 
 impl ToString for ClipboardData {
@@ -42,9 +47,21 @@ impl ToString for ClipboardData {
             Self::Text(text) => text.to_owned(),
             Self::Url(html) => html.join("\n"),
             Self::Html(html) => html.to_owned(),
-            // TODO: 更多信息? 例如: 时间, 产生进程等
-            // 通过 md5 去重
-            Self::Image(_) => String::from("[image]"),
+            Self::Image(_, hash, time) => {
+                format!("[image: {}, {}]", hash, time.format("%m-%d %H:%M:%S"))
+            }
+        }
+    }
+}
+
+impl PartialEq for ClipboardData {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Text(t1), Self::Text(t2)) => t1 == t2,
+            (Self::Url(t1), Self::Url(t2)) => t1 == t2,
+            (Self::Html(t1), Self::Html(t2)) => t1 == t2,
+            (Self::Image(_, t1, _), Self::Image(_, t2, _)) => t1 == t2,
+            _ => false,
         }
     }
 }
@@ -55,8 +72,18 @@ impl ClipboardData {
             Self::Text(text) => text.chars().take(limit).collect(),
             Self::Url(html) => html.join("\n").chars().take(limit).collect(),
             Self::Html(html) => html.chars().take(limit).collect(),
-            Self::Image(_) => String::from("[image]"),
+            Self::Image(_, hash, time) => {
+                format!("[image: {}, {}]", hash, time.format("%m-%d %H:%M:%S"))
+            }
         }
+    }
+
+    pub fn calc_image_hash(pixbuf: &gtk::gdk_pixbuf::Pixbuf) -> String {
+        // 这里不需要关心安全性, 速度比较重要, 且长度太长了不方便人类阅读, 所以用 md5
+        let mut hasher = Md5::new();
+        hasher.update(pixbuf.read_pixel_bytes());
+        let hash = hasher.finalize();
+        hex::encode(&hash)
     }
 }
 
@@ -122,7 +149,7 @@ impl ClipboardData {
                     },
                 );
             }
-            ClipboardData::Image(image) => {
+            ClipboardData::Image(image, _, _) => {
                 clipboard.set_image(&image);
             }
         }
@@ -201,7 +228,12 @@ impl ClipboardManager {
                     .map(|x| ClipboardData::Html(x.to_string())),
                 ClipboardDataType::Image => {
                     if let Some(pixbuf) = clipboard.wait_for_image() {
-                        Some(ClipboardData::Image(pixbuf))
+                        let image_hash = ClipboardData::calc_image_hash(&pixbuf);
+                        Some(ClipboardData::Image(
+                            pixbuf,
+                            image_hash,
+                            chrono::offset::Local::now(),
+                        ))
                     } else {
                         None
                     }
