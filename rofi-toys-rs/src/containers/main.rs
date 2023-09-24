@@ -17,8 +17,8 @@ pub fn get_docker() -> docker::Docker {
 
 pub fn make_table_column(col_text: String, max_length: usize) -> String {
     if col_text.len() > max_length {
-        let mut result = col_text.chars().take(max_length - 3).collect::<String>();
-        result.push_str("...");
+        let mut result = col_text.chars().take(max_length - 1).collect::<String>();
+        result.push_str("…");
         result
     } else {
         let mut result = col_text.clone();
@@ -90,11 +90,11 @@ pub fn list_containers(rofi: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> 
 
         rofi.add_menu_entry_with_params(
             &format!(
-                "id: {} image: {} name: {} status: {} command: {}",
+                "{}  {}  {}  {}  {}",
                 sid,
-                make_table_column(image, 26),
-                make_table_column(name, 20),
-                make_table_column(status, 26),
+                make_table_column(image, 32),
+                make_table_column(name, 32),
+                make_table_column(status, 30), // Exited (255) About an hour ago
                 command,
             ),
             container_menu,
@@ -119,6 +119,12 @@ pub fn container_menu(rofi: &RofiPlugin, params: Vec<String>) -> anyhow::Result<
         .to_owned()
         .unwrap_or_else(|| "[no name found]".to_string());
     name.drain(0..1);
+
+    let status = if let Some(state) = container_inspect.state {
+        state.status.unwrap_or_else(|| NULL.to_string())
+    } else {
+        NULL.to_string()
+    };
 
     let image = container_inspect
         .image
@@ -195,6 +201,11 @@ pub fn container_menu(rofi: &RofiPlugin, params: Vec<String>) -> anyhow::Result<
         &format!("name:\t\t {}", &name),
         copy_to_clipboard,
         vec![name],
+    );
+    rofi.add_menu_entry_with_params(
+        &format!("status:\t\t {}", &status),
+        copy_to_clipboard,
+        vec![status],
     );
     rofi.add_menu_entry_with_params(
         &format!("image:\t\t {}", &image_tag),
