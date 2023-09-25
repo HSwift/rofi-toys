@@ -47,8 +47,16 @@ impl ToString for ClipboardData {
             Self::Text(text) => text.to_owned(),
             Self::Url(html) => html.join("\n"),
             Self::Html(html) => html.to_owned(),
-            Self::Image(_, hash, time) => {
-                format!("[image: {}, {}]", hash, time.format("%m-%d %H:%M:%S"))
+            Self::Image(image, hash, time) => {
+                format!(
+                    "[image: {}, {}, {}x{}, {}]",
+                    hash,
+                    time.format("%m-%d %H:%M:%S"),
+                    image.width(),
+                    image.height(),
+                    byte_unit::Byte::from_bytes(image.byte_length() as u128)
+                        .get_appropriate_unit(false)
+                )
             }
         }
     }
@@ -72,8 +80,16 @@ impl ClipboardData {
             Self::Text(text) => text.chars().take(limit).collect(),
             Self::Url(html) => html.join("\n").chars().take(limit).collect(),
             Self::Html(html) => html.chars().take(limit).collect(),
-            Self::Image(_, hash, time) => {
-                format!("[image: {}, {}]", hash, time.format("%m-%d %H:%M:%S"))
+            Self::Image(image, hash, time) => {
+                format!(
+                    "[image: {}, {}, {}x{}, {}]",
+                    hash,
+                    time.format("%m-%d %H:%M:%S"),
+                    image.width(),
+                    image.height(),
+                    byte_unit::Byte::from_bytes(image.byte_length() as u128)
+                        .get_appropriate_unit(false)
+                )
             }
         }
     }

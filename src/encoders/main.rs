@@ -441,9 +441,9 @@ fn entrypoint(rofi: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     let input = clipboard::clipboard_get_text();
     let input_length = get_string_length(&input);
 
-    let mut input = input.chars().take(50).collect::<String>();
-    if input_length > 50 {
-        input.push_str("...");
+    let mut input = input.chars().take(100).collect::<String>();
+    if input_length > 100 {
+        input.push_str("…");
     }
 
     rofi.set_message(&format!(
