@@ -160,6 +160,10 @@ impl RofiPlugin {
         println!("\x00message\x1f{}", msg);
     }
 
+    pub fn set_theme(&self, msg: &str) {
+        println!("\x00theme\x1f{}", msg);
+    }
+
     pub fn show_error(&self, msg: &str) {
         let msg = format!("error: {}", msg);
         let empty_state = serde_json::to_string(&RofiPluginState::empty()).unwrap();

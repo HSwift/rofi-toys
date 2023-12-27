@@ -156,6 +156,8 @@ pub fn container_menu(rofi: &RofiPlugin, params: Vec<String>) -> anyhow::Result<
     let container_inspect = TOKIO.block_on(docker.containers().get(id).inspect())?;
     let container_config = read_config();
 
+    rofi.set_theme("listview {columns:2;fixed-columns: true;}");
+
     let sid = id.chars().take(12).collect::<String>();
 
     let mut name = container_inspect
