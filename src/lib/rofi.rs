@@ -140,7 +140,7 @@ impl RofiPlugin {
                         );
                     }
                     Err(err) => {
-                        self.show_error(&err.to_string());
+                        self.show_error(&format!("{:?}", err));
                     }
                 }
             } else {

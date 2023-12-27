@@ -2,13 +2,37 @@ use std::collections::HashMap;
 
 use base64::engine::general_purpose as base64_engine;
 use base64::Engine;
+use isahc::prelude::*;
 use md5::{Digest, Md5};
 use pyo3::Python;
 use rand::Rng;
 use rofi_toys::clipboard;
+use rofi_toys::file;
 use rofi_toys::rofi::{RofiPlugin, RofiPluginError};
 use sha2::Sha256;
 use uuid::Uuid;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct EncoderConfig {
+    baidu_fanyi_secret: String,
+    baidu_fanyi_appid: String,
+}
+
+fn generate_default_config() -> EncoderConfig {
+    let encoder_config = EncoderConfig {
+        baidu_fanyi_secret: String::new(),
+        baidu_fanyi_appid: String::new(),
+    };
+    file::config_save_to_file(&encoder_config, "encoder").unwrap();
+    return encoder_config;
+}
+
+fn deserialize_notes() -> EncoderConfig {
+    match file::config_restore_from_file("encoder") {
+        Ok(x) => x,
+        Err(_) => generate_default_config(),
+    }
+}
 
 fn get_string_length(str: &str) -> usize {
     str.chars().count()
@@ -378,6 +402,76 @@ fn substring(_: &RofiPlugin, params: Vec<String>) -> anyhow::Result<()> {
     }
 }
 
+fn baidu_translate(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
+    let encoder_config = deserialize_notes();
+    let text = clipboard::clipboard_get_text();
+    if encoder_config.baidu_fanyi_appid.is_empty() || encoder_config.baidu_fanyi_secret.is_empty() {
+        return Err(RofiPluginError::new("set baidu fanyi appid and secret first").into());
+    }
+    let regex = regex::Regex::new(r###"[\u4e00-\u9fa5]|[a-zA-Z]+"###).unwrap();
+    let mut en_count = 0;
+    let mut all_count = 0;
+    let lang;
+    let to;
+    let salt = "12345678";
+    let sign = format!(
+        "{}{}{}{}",
+        encoder_config.baidu_fanyi_appid, text, salt, encoder_config.baidu_fanyi_secret
+    );
+
+    for c in regex.find_iter(&text) {
+        if c.as_str().is_ascii() {
+            en_count += 1;
+        }
+        all_count += 1;
+    }
+    if en_count as f64 / all_count as f64 > 0.5 {
+        lang = "en";
+        to = "zh";
+    } else {
+        lang = "zh";
+        to = "en";
+    }
+
+    let mut hasher = Md5::new();
+    hasher.update(sign.as_bytes());
+    let hash = hasher.finalize();
+    let hashed_sign = &hex::encode(&hash);
+    let text = urlencoding::encode(&text);
+
+    let query = format!(
+        "q={}&from={}&to={}&appid={}&salt={}&sign={}",
+        text, lang, to, encoder_config.baidu_fanyi_appid, salt, hashed_sign
+    );
+
+    let mut response = isahc::get(format!(
+        "https://fanyi-api.baidu.com/api/trans/vip/translate?{}",
+        query
+    ))?;
+
+    #[derive(serde::Deserialize)]
+    struct TranslateResponse {
+        trans_result: Option<Vec<HashMap<String, String>>>,
+        error_msg: Option<String>,
+    }
+
+    if !response.status().is_success() {
+        return Err(RofiPluginError::new(&format!(
+            "fanyi-api response status code is {}",
+            response.status()
+        ))
+        .into());
+    }
+    let response_data: TranslateResponse = serde_json::from_str(response.text()?.as_str())?;
+    if response_data.trans_result.is_some() {
+        clipboard::clipboard_set_text(response_data.trans_result.unwrap()[0].get("dst").unwrap());
+        Ok(())
+    } else {
+        let error_msg = response_data.error_msg.unwrap();
+        Err(RofiPluginError::new(&error_msg).into())
+    }
+}
+
 #[derive(Default)]
 struct DuplicateQSValue(Vec<String>);
 
@@ -483,6 +577,7 @@ fn entrypoint(rofi: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
     rofi.add_menu_entry("qs_to_json", qs_to_json);
     rofi.add_menu_entry("chr", chr);
     rofi.add_menu_entry("ord", ord);
+    rofi.add_menu_entry("translate", baidu_translate);
 
     Ok(())
 }
@@ -527,6 +622,7 @@ fn main() {
     rofi.register_callback(qs_to_json);
     rofi.register_callback(chr);
     rofi.register_callback(ord);
+    rofi.register_callback(baidu_translate);
 
     rofi.run();
 }
