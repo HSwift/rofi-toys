@@ -27,7 +27,7 @@ fn generate_default_config() -> EncoderConfig {
     return encoder_config;
 }
 
-fn deserialize_notes() -> EncoderConfig {
+fn read_config() -> EncoderConfig {
     match file::config_restore_from_file("encoder") {
         Ok(x) => x,
         Err(_) => generate_default_config(),
@@ -403,7 +403,7 @@ fn substring(_: &RofiPlugin, params: Vec<String>) -> anyhow::Result<()> {
 }
 
 fn baidu_translate(_: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
-    let encoder_config = deserialize_notes();
+    let encoder_config = read_config();
     let text = clipboard::clipboard_get_text();
     if encoder_config.baidu_fanyi_appid.is_empty() || encoder_config.baidu_fanyi_secret.is_empty() {
         return Err(RofiPluginError::new("set baidu fanyi appid and secret first").into());
