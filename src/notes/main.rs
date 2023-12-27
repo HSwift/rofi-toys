@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use rofi_toys::clipboard;
 use rofi_toys::file;
@@ -6,7 +6,7 @@ use rofi_toys::rofi::RofiPlugin;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct Notes {
-    contents: HashMap<String, String>,
+    contents: BTreeMap<String, String>,
 }
 
 fn serialize_notes(notes: &Notes) -> anyhow::Result<()> {
@@ -17,7 +17,7 @@ fn deserialize_notes() -> Notes {
     match file::storage_restore_from_file("notes") {
         Ok(x) => x,
         Err(_) => Notes {
-            contents: HashMap::new(),
+            contents: BTreeMap::new(),
         },
     }
 }
