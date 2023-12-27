@@ -35,4 +35,4 @@ curl --unix-socket /run/user/1000/clipd.sock http://localhost/list
 
 ### notes
 
-TODO: 记事本. @HSwift
+记事本工具，可以浏览或将剪贴板内容保存到记事本。
