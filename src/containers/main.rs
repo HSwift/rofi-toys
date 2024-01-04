@@ -4,6 +4,7 @@ use docker_api::docker;
 use docker_api::opts::ContainerListOpts;
 use once_cell::sync::Lazy;
 use rofi_toys::rofi::{RofiPlugin, RofiPluginError};
+use rofi_toys::utils::make_table_column;
 use rofi_toys::{clipboard, file};
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -45,18 +46,6 @@ static TOKIO: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
 
 pub fn get_docker() -> docker::Docker {
     docker::Docker::unix("/var/run/docker.sock")
-}
-
-pub fn make_table_column(col_text: String, max_length: usize) -> String {
-    if col_text.len() > max_length {
-        let mut result = col_text.chars().take(max_length - 1).collect::<String>();
-        result.push_str("…");
-        result
-    } else {
-        let mut result = col_text.clone();
-        result.push_str(&" ".repeat(max_length - col_text.chars().count()));
-        result
-    }
 }
 
 pub fn list_containers(rofi: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> {
