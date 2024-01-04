@@ -2,7 +2,7 @@ use core::fmt;
 use dbus::blocking::Connection;
 use dbus::Path;
 use rofi_toys::rofi::RofiPluginError;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::time::Duration;
 
 use crate::agent::{IWDAgent, IWDAgentUserData};
