@@ -29,6 +29,10 @@ path = "src/containers/main.rs"
 name = "notes"
 path = "src/notes/main.rs"
 
+[[bin]]
+name = "iwctl"
+path = "src/iwctl/main.rs"
+
 [lib]
 name = "rofi_toys"
 path = "src/lib/mod.rs"
@@ -62,6 +66,8 @@ regex = "1.9.5"
 rand = "0.8.5"
 md-5 = "0.10.5"
 sha2 = "0.10.7"
+dbus = "0.9.7"
+dbus-crossroads = "0.5.2"
 
 
 # python binding for pyeval
