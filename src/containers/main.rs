@@ -131,7 +131,7 @@ pub fn list_containers(rofi: &RofiPlugin, _: Vec<String>) -> anyhow::Result<()> 
             row_str.push(' ')
         }
 
-        rofi.add_menu_entry_with_params(row_str.as_str(), container_menu, vec![id]);
+        rofi.add_menu_entry_with_params(row_str.trim_end(), container_menu, vec![id]);
     });
 
     Ok(())
