@@ -30,8 +30,8 @@ name = "notes"
 path = "src/notes/main.rs"
 
 [[bin]]
-name = "iwctl"
-path = "src/iwctl/main.rs"
+name = "iwmenu"
+path = "src/iwmenu/main.rs"
 
 [lib]
 name = "rofi_toys"

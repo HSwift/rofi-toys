@@ -37,6 +37,6 @@ curl --unix-socket /run/user/1000/clipd.sock http://localhost/list
 
 记事本工具，可以浏览或将剪贴板内容保存到记事本。
 
-### iwctl
+### iwmenu
 
 Wi-Fi连接工具，使用iwd的dbus API。可以查看Wi-Fi列表，并连接到指定网络。
