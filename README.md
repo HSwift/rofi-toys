@@ -2,6 +2,8 @@
 
 rofi 工具集合
 
+https://github.com/user-attachments/assets/46a528cb-47f5-4fdb-80be-6dd06b4f5426
+
 ## 构建
 
 ```sh
